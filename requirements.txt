@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+requests
+streamlit
+
+# LLM SDKs - you only need to install the one for your chosen PROVIDER,
+# but installing both is fine and keeps switching frictionless.
+anthropic
+openai

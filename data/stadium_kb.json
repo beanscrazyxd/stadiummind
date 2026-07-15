@@ -1,0 +1,26 @@
+{
+  "stadium_name": "MetLife Stadium (Demo)",
+  "gates": [
+    {"id": "A", "name": "Gate A", "zone": "North", "capacity": 8000},
+    {"id": "B", "name": "Gate B", "zone": "East", "capacity": 6000},
+    {"id": "C", "name": "Gate C", "zone": "South", "capacity": 7000},
+    {"id": "D", "name": "Gate D", "zone": "West", "capacity": 5000}
+  ],
+  "amenities": [
+    {"id": "R1", "type": "restroom", "name": "Restroom North-1", "near_gate": "A"},
+    {"id": "R2", "type": "restroom", "name": "Restroom East-1", "near_gate": "B"},
+    {"id": "R3", "type": "restroom", "name": "Restroom South-1", "near_gate": "C"},
+    {"id": "R4", "type": "restroom", "name": "Restroom West-1", "near_gate": "D"},
+    {"id": "F1", "type": "food", "name": "Food Court North", "near_gate": "A"},
+    {"id": "F2", "type": "food", "name": "Food Court East", "near_gate": "B"},
+    {"id": "F3", "type": "food", "name": "Food Court South", "near_gate": "C"},
+    {"id": "M1", "type": "medical", "name": "Medical Station 1", "near_gate": "A"},
+    {"id": "M2", "type": "medical", "name": "Medical Station 2", "near_gate": "C"}
+  ],
+  "faqs": [
+    {"q": "bag policy", "a": "Clear bags only, max 12x6x12 inches. No backpacks."},
+    {"q": "reentry", "a": "No re-entry once you exit the stadium."},
+    {"q": "parking", "a": "Lots open 4 hours before kickoff. Lot 1 is closest to Gate A."},
+    {"q": "accessible seating", "a": "Accessible seating and elevators are available near every gate; ask any staff member for the nearest one."}
+  ]
+}
