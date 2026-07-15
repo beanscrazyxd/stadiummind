@@ -1,70 +1,346 @@
-# StadiumMind — Smart Stadium & Tournament Ops (FIFA World Cup 2026)
+================================================================================
+                        STADIUMMIND — SETUP GUIDE
+================================================================================
 
-GenAI-powered fan assistant + ops command center + safety incident responder,
-built on top of a simulated live data feed (no hardware needed).
+Premium AI Operations Command Center for major sporting events
+(FIFA World Cup, Olympics, ICC tournaments)
 
-## 1. Install
+Monitors: gates, crowd density, queues, incidents, amenities
+Provides: real-time data + AI recommendations via premium React dashboard
 
-```bash
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+================================================================================
+                            QUICK START
+================================================================================
 
-## 2. Add your API key (only file you touch)
+BACKEND SETUP (Terminal 1)
+─────────────────────────
 
-```bash
-cp .env.example .env
-```
+1. Install & activate Python environment
 
-Open `.env` and:
-1. Set `PROVIDER` to `mock`, `anthropic`, `gemini`, or `groq`.
-2. Paste your key into the matching line (`ANTHROPIC_API_KEY=`, `GEMINI_API_KEY=`, or `GROQ_API_KEY=`).
+    cd stadiummind
+    python -m venv venv
+    source venv/bin/activate      # Windows: venv\Scripts\activate
+    pip install -r requirements.txt
 
-That's it — nothing in the Python code needs to change.
+2. Add your API key (only file you touch)
 
-**`PROVIDER=mock`** costs $0 and needs no key at all — it returns smart,
-route-aware canned answers using your live simulated data. Good default for
-coding and even for a live demo if you want zero risk.
+    cp .env.example .env
+    
+    Open .env and:
+    • Set PROVIDER to: mock, anthropic, gemini, or groq
+    • Paste your key into the matching line (ANTHROPIC_API_KEY=, 
+      GEMINI_API_KEY=, or GROQ_API_KEY=)
+    
+    That's it — nothing in the Python code needs to change.
 
-**`PROVIDER=gemini`** is the best free *live* option: Google AI Studio gives
-a permanent free tier, no card needed. Get a key at https://aistudio.google.com.
+3. Run backend
 
-**`PROVIDER=groq`** is free, no card, very fast (Llama 3.3 70B).
-Get a key at https://console.groq.com.
+    uvicorn main:app --reload
+    
+    Backend runs at http://localhost:8000
 
-**`PROVIDER=anthropic`** uses Claude directly. New accounts get free trial
-credit at https://platform.claude.com — at Haiku pricing a full demo day
-costs well under $1.
 
-## 3. Run it
+FRONTEND SETUP (Terminal 2)
+──────────────────────────
 
-Backend:
-```bash
-uvicorn main:app --reload
-```
+1. Install dependencies
 
-Dashboard (in a second terminal):
-```bash
-streamlit run ops_dashboard.py
-```
+    cd stadiummind-frontend
+    pnpm install
+    
+    (or: npm install)
 
-Backend runs at http://localhost:8000, dashboard opens automatically in your browser.
+2. Add backend URL
 
-## Project layout
+    Create .env.local with:
+    VITE_BACKEND_URL=http://localhost:8000
 
-```
-main.py            FastAPI backend: /fan/chat, /ops/query, /ops/status, /safety/trigger_incident
-llm_client.py       Single ask_llm() wrapper — swap providers via .env, caches repeat questions
-simulator.py        Fakes live gate/queue/incident data with a background thread
-ops_dashboard.py    Streamlit ops command center UI
-data/stadium_kb.json  Static gate/amenity/FAQ knowledge base
-.env.example        Copy to .env and fill in — the only file with secrets
-```
+3. Run frontend
 
-## Cost-control features already built in
+    pnpm dev
+    
+    (or: npm run dev)
+    
+    Dashboard opens at http://localhost:3000
 
-- In-memory cache — identical questions are never billed twice
-- Cheap model + `MAX_TOKENS=250` by default
-- The LLM only ever explains/summarizes data Python already computed —
-  it's never asked to "fetch" anything, so prompts stay short
+
+BOTH RUNNING
+────────────
+
+Backend: http://localhost:8000 ✓
+Frontend: http://localhost:3000 ✓
+
+Open http://localhost:3000 in your browser and start monitoring.
+
+================================================================================
+                          PROVIDER OPTIONS
+================================================================================
+
+PROVIDER=mock
+  • Cost: $0
+  • API key: none needed
+  • Returns: smart, route-aware canned answers using live simulated data
+  • Best for: coding, testing, live demos with zero risk
+  • No setup required — just use it
+
+PROVIDER=gemini
+  • Cost: free (permanent free tier, no card needed)
+  • API key: get at https://aistudio.google.com
+  • Model: Google's Gemini
+  • Best for: live demos, production use
+  • Setup: Copy API key to GEMINI_API_KEY= in .env
+
+PROVIDER=groq
+  • Cost: free (no card needed)
+  • API key: get at https://console.groq.com
+  • Model: Llama 3.3 70B (very fast)
+  • Best for: live demos, production use
+  • Setup: Copy API key to GROQ_API_KEY= in .env
+
+PROVIDER=anthropic
+  • Cost: new accounts get free trial credit (full demo day ~$1)
+  • API key: get at https://platform.claude.com
+  • Model: Claude (Haiku pricing)
+  • Best for: production use, best quality
+  • Setup: Copy API key to ANTHROPIC_API_KEY= in .env
+
+================================================================================
+                          PROJECT LAYOUT
+================================================================================
+
+BACKEND (stadiummind/)
+─────────────────────
+
+main.py
+  • FastAPI backend
+  • Endpoints: /ops/status, /ops/query, /safety/trigger_incident, /health
+
+llm_client.py
+  • Single ask_llm() wrapper
+  • Swap providers via .env
+  • Caches repeat questions (no double billing)
+
+simulator.py
+  • Fakes live gate/queue/incident data
+  • Background thread keeps data fresh
+
+ops_dashboard.py
+  • Original Streamlit UI (optional)
+  • Run with: streamlit run ops_dashboard.py
+
+data/stadium_kb.json
+  • Static gate/amenity/FAQ knowledge base
+
+.env.example
+  • Copy to .env and fill in
+  • Only file with secrets
+
+
+FRONTEND (stadiummind-frontend/)
+────────────────────────────────
+
+client/src/
+  • components/ — Reusable UI components
+  • pages/ — Page components
+  • hooks/ — Custom React hooks (useOpsData for API calls)
+  • App.tsx — Main app component
+  • index.css — Global styles + premium animations
+
+package.json
+  • Dependencies: React 19, Tailwind CSS 4, Framer Motion, Lucide Icons
+
+vite.config.ts
+  • Build configuration
+
+.env.local
+  • Backend URL configuration
+
+================================================================================
+                      COST-CONTROL FEATURES
+================================================================================
+
+Already built in:
+
+• In-memory cache — identical questions never billed twice
+• Cheap model + MAX_TOKENS=250 by default
+• LLM only explains/summarizes data Python already computed
+  (never asked to "fetch" anything, so prompts stay short)
+
+Result: Full demo day costs under $1 even with paid providers
+
+================================================================================
+                        DASHBOARD FEATURES
+================================================================================
+
+Real-Time Monitoring
+  • Gate Status Cards — Live capacity %, queue times, crowd density
+  • Color-Coded Alerts — Green (normal), Yellow (caution), Red (critical)
+  • Amenities Dashboard — Restroom, food court, medical station queues
+  • Incident Timeline — Recent incidents with timestamps
+
+AI Assistant
+  • Ask questions about gate status, queue times, incidents
+  • Get AI-powered recommendations for staff deployment
+  • ChatGPT Enterprise-style interface with message history
+
+Incident Simulator
+  • Trigger demo incidents to test response workflows
+  • Simulate overcrowding, medical emergencies, security issues
+  • View AI-generated response plans
+
+Premium Design
+  • Apple + FIFA + Linear aesthetic
+  • White background with #0057FF blue gradients
+  • Emerald accents for success states
+  • Glassmorphism effects with soft shadows
+  • Large border radius (20-24px) for premium feel
+  • Smooth animations and micro-interactions
+
+================================================================================
+                          API ENDPOINTS
+================================================================================
+
+GET /health
+  Returns: {"status": "ok"}
+
+GET /ops/status
+  Returns: live gate, amenity, incident data
+  
+POST /ops/query
+  Body: {"question": "What's the status at Gate C?"}
+  Returns: AI-powered answer
+
+POST /safety/trigger_incident
+  Body: {"location": "C", "incident_type": "overcrowding"}
+  Returns: incident details + AI response plan
+
+================================================================================
+                        TROUBLESHOOTING
+================================================================================
+
+BACKEND ISSUES
+──────────────
+
+Backend won't start:
+  • Check Python version: python --version (need 3.8+)
+  • Check port 8000 is free: lsof -i :8000
+  • Kill process: kill -9 <PID>
+  • Try different port: uvicorn main:app --port 8001
+
+API key not working:
+  • Double-check key from provider (no extra spaces)
+  • Verify PROVIDER name matches key name in .env
+  • Try PROVIDER=mock first to test setup
+  • Check key hasn't expired
+
+No data showing:
+  • Wait 5 seconds for simulator to generate data
+  • Check backend logs in terminal
+
+
+FRONTEND ISSUES
+───────────────
+
+Frontend won't connect:
+  • Verify backend is running: curl http://localhost:8000/health
+  • Check .env.local exists with VITE_BACKEND_URL=http://localhost:8000
+  • Restart frontend: pnpm dev
+
+Port 3000 already in use:
+  • Kill process: kill -9 $(lsof -t -i :3000)
+  • Or use different port: pnpm dev -- --port 3001
+
+Dependencies not installing:
+  • Clear cache: rm -rf node_modules pnpm-lock.yaml
+  • Reinstall: pnpm install
+
+No data on dashboard:
+  • Check browser console (F12 → Console)
+  • Check Network tab (F12 → Network) for API errors
+  • Verify backend is responding: curl http://localhost:8000/ops/status
+
+================================================================================
+                      PRODUCTION DEPLOYMENT
+================================================================================
+
+FRONTEND BUILD
+──────────────
+
+  cd stadiummind-frontend
+  pnpm build
+  
+  Output: dist/public/
+  
+  Deploy to:
+    • Netlify
+    • Vercel
+    • AWS S3 + CloudFront
+    • Any static host
+
+
+BACKEND DEPLOYMENT
+───────────────────
+
+  cd stadiummind
+  pip install gunicorn
+  gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
+  
+  Deploy to:
+    • Heroku
+    • Railway
+    • AWS EC2
+    • DigitalOcean
+    • Any Python hosting
+
+================================================================================
+                          TECH STACK
+================================================================================
+
+FRONTEND
+────────
+  • React 19 — UI framework
+  • Tailwind CSS 4 — Styling
+  • Framer Motion — Animations
+  • Lucide Icons — Icon library
+  • Vite — Build tool
+  • TypeScript — Type safety
+
+BACKEND
+───────
+  • FastAPI — Web framework
+  • Python 3.8+ — Language
+  • Uvicorn — ASGI server
+  • Pydantic — Data validation
+  • LLM APIs — Gemini, Groq, Claude, etc.
+
+================================================================================
+                          NEXT STEPS
+================================================================================
+
+Recommended enhancements:
+  [ ] Add real stadium data integration
+  [ ] Set up alert thresholds and notifications
+  [ ] Add user authentication
+  [ ] Create incident history dashboard
+  [ ] Deploy to production
+  [ ] Build mobile app
+
+================================================================================
+                          SUPPORT
+================================================================================
+
+For issues:
+  1. Check Troubleshooting section above
+  2. Review backend logs in terminal
+  3. Check browser console (F12 → Console)
+  4. Verify .env and .env.local files are correct
+
+Common commands:
+  Check backend: curl http://localhost:8000/health
+  Check ops: curl http://localhost:8000/ops/status
+  Kill port 8000: kill -9 $(lsof -t -i :8000)
+  Kill port 3000: kill -9 $(lsof -t -i :3000)
+
+================================================================================
+                    Built for FIFA World Cup, Olympics, ICC Tournaments
+================================================================================
