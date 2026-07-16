@@ -1,5 +1,7 @@
 # StadiumMind — Smart Stadium & Tournament Ops (FIFA World Cup 2026)
 
+**🔴 Live demo:** https://stadiummind-production.up.railway.app
+
 GenAI-powered fan assistant + ops command center + safety incident responder,
 built on top of a simulated live data feed (no hardware needed). Backend and
 dashboard run as a single service — one process, one URL.
@@ -59,29 +61,30 @@ A lighter Streamlit dashboard is also included for reference:
 streamlit run ops_dashboard.py
 ```
 
-## 4. Deploy for free — one service, always live
+## 4. Deployment
 
-**Host: [Render](https://render.com)** (free tier, no card)
+**Host: [Railway](https://railway.app)** (free tier, no card required)
 
-1. Sign up with GitHub, **New +** → **Web Service** → select this repo
-2. Build command: `pip install -r requirements.txt`
-3. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Instance type: **Free**
-5. Add environment variables (same as your local `.env`):
-   ```
-   PROVIDER=groq
-   GROQ_API_KEY=your-key
-   MODEL=llama-3.3-70b-versatile
-   MAX_TOKENS=250
-   ```
-6. Deploy. You get one URL, e.g. `https://stadiummind-backend.onrender.com` —
-   opening it in a browser loads the full dashboard directly.
+Live at: **https://stadiummind-production.up.railway.app**
 
-**Keep it awake: [UptimeRobot](https://uptimerobot.com)** (free, no card)
+Deployed straight from this GitHub repo. Environment variables are set in
+the Railway service's **Variables** tab (not committed to the repo):
+```
+PROVIDER=groq
+GROQ_API_KEY=your-key
+MODEL=llama-3.3-70b-versatile
+MAX_TOKENS=250
+```
 
-Render's free tier sleeps after 15 minutes idle. Add a monitor pinging
-`https://your-app.onrender.com/health` every 5 minutes and it never
-gets the chance to sleep — no separate keep-alive server needed.
+Note: after changing any variable in Railway, the service needs a manual
+**Redeploy** (Deployments tab → ⋮ → Redeploy) before the new value takes
+effect — env vars are only read on process startup.
+
+To verify the live deployment is running on the intended provider:
+```bash
+curl https://stadiummind-production.up.railway.app/health
+```
+should return `{"status":"ok","provider":"groq"}`.
 
 ## Project layout
 
