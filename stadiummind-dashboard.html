@@ -15,6 +15,7 @@
     --panel-hi: rgba(30,40,34,0.65);
     --chalk:#F1F1E8;
     --steel:#8B968E;
+    --steel-min:#A6B0A9;
     --floodlight:#FFB648;
     --floodlight-soft: rgba(255,182,72,0.16);
     --turf:#3FA66B;
@@ -39,6 +40,9 @@
   .mono{font-family:'IBM Plex Mono', monospace;}
   .display{font-family:'Bebas Neue', sans-serif;}
   a{color:inherit;}
+  .skip-link{position:absolute; left:-9999px; top:0; z-index:100; background:var(--floodlight); color:var(--ink); padding:12px 20px; border-radius:0 0 10px 0; font-weight:700;}
+  .skip-link:focus{left:0;}
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
 
   #bg-canvas{position:fixed; inset:0; z-index:0; opacity:0.65;}
   .aurora{position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
@@ -129,19 +133,19 @@
   .hstat-label{display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel); margin-bottom:12px;}
   .hstat-label svg{width:14px; height:14px; stroke:var(--floodlight);}
   .hstat-val{font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.01em;}
-  .hstat-sub{font-size:12.5px; color:var(--steel); margin-top:4px;}
+  .hstat-sub{font-size:12.5px; color:var(--steel-min); margin-top:4px;}
 
   /* ---------- section heads ---------- */
   .sec-head{display:flex; align-items:baseline; justify-content:space-between; margin:44px 0 20px;}
   .sec-title{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:0.01em;}
-  .sec-note{font-size:12.5px; color:var(--steel); font-family:'IBM Plex Mono',monospace;}
+  .sec-note{font-size:12.5px; color:var(--steel-min); font-family:'IBM Plex Mono',monospace;}
 
   /* ---------- gate cards ---------- */
   .grid-gates{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:20px;}
   .gate-card{padding:26px 26px 22px; overflow:hidden;}
   .gate-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;}
   .gate-name{font-family:'Bebas Neue',sans-serif; font-size:24px;}
-  .gate-zone{font-size:12px; color:var(--steel); margin-top:2px;}
+  .gate-zone{font-size:12px; color:var(--steel-min); margin-top:2px;}
   .pct-chip{padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:700; font-family:'IBM Plex Mono',monospace;}
   .pct-chip.normal{background:var(--turf-soft); color:var(--turf);}
   .pct-chip.caution{background:var(--floodlight-soft); color:var(--floodlight);}
@@ -180,7 +184,7 @@
   .amenity-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
   .amenity-name{font-weight:700; font-size:15px;}
   .amenity-wait{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px;}
-  .amenity-near{font-size:12px; color:var(--steel); margin-bottom:14px;}
+  .amenity-near{font-size:12px; color:var(--steel-min); margin-bottom:14px;}
   .amenity-track{height:5px; border-radius:99px; background:rgba(255,255,255,0.06); overflow:hidden;}
   .amenity-fill{height:100%; border-radius:99px; transition:width 1s cubic-bezier(.2,.8,.2,1);}
 
@@ -290,29 +294,30 @@
 </head>
 <body>
 
-<canvas id="bg-canvas"></canvas>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<canvas id="bg-canvas" aria-hidden="true" role="presentation"></canvas>
 <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="grain"></div>
 
-<div class="wrap">
+<main class="wrap" id="main-content">
   <header>
     <div class="brand">
       <div class="brand-mark">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F0C" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F0C" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"/></svg>
       </div>
       <div>
         <div class="brand-name">STADIUMMIND</div>
         <div class="brand-sub">Operations Command Center</div>
       </div>
     </div>
-    <div class="live-badge" id="liveBadge"><span class="led"></span><span id="liveBadgeText">Connecting…</span></div>
+    <div class="live-badge" id="liveBadge" role="status" aria-live="polite"><span class="led"></span><span id="liveBadgeText">Connecting…</span></div>
     <div class="header-actions">
       <button class="icon-btn" onclick="fetchStatus(true)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg>
         Refresh
       </button>
       <button class="icon-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-3.9 3.1-6.3 7-6.3s7 2.4 7 6.3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-3.9 3.1-6.3 7-6.3s7 2.4 7 6.3"/></svg>
         Profile
       </button>
     </div>
@@ -352,7 +357,7 @@
     <div class="sec-title">Gates Status</div>
     <div class="sec-note mono">POLLING /ops/status · 6s</div>
   </div>
-  <div class="grid-gates" id="gatesGrid"></div>
+  <div class="grid-gates" id="gatesGrid" aria-live="polite" aria-atomic="false"></div>
 
   <!-- AMENITIES -->
   <div class="sec-head reveal">
@@ -360,7 +365,7 @@
     <div class="sec-note mono" id="amenityCount">—</div>
   </div>
   <div id="amenitiesRoot"></div>
-</div>
+</main>
 
 <!-- AI ASSISTANT -->
 <div class="ai-widget glass" id="aiWidget">
@@ -375,43 +380,44 @@
     <div class="ai-toggle">⌃</div>
   </div>
   <div class="ai-body">
-    <div class="ai-messages" id="aiMessages">
+    <div class="ai-messages" id="aiMessages" role="log" aria-live="polite" aria-relevant="additions">
       <div class="msg bot">Hello! I'm your AI Operations Assistant. Ask me anything about gate capacity, queue times, or incident response recommendations.<div class="msg-time" id="aiFirstTime"></div></div>
     </div>
     <div class="ai-input-row">
+      <label for="aiInput" class="sr-only">Ask the AI operations assistant a question</label>
       <input class="ai-input" id="aiInput" placeholder="Ask about gates, queues, incidents…" onkeydown="if(event.key==='Enter')sendAiMessage()">
-      <button class="ai-send" onclick="sendAiMessage()"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+      <button class="ai-send" onclick="sendAiMessage()" aria-label="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
     </div>
     <div class="ai-hint">Example: "What's the status at Gate C?" or "Where should I send extra staff?"</div>
   </div>
 </div>
 
 <!-- INCIDENT FAB -->
-<button class="incident-fab" onclick="openIncidentModal()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+<button class="incident-fab" onclick="openIncidentModal()" aria-haspopup="dialog">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
   Incident Simulator
 </button>
 
 <!-- INCIDENT MODAL -->
-<div class="modal-overlay" id="incidentOverlay">
-  <div class="modal">
+<div class="modal-overlay" id="incidentOverlay" role="presentation">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="incidentModalTitle">
     <div class="modal-head">
       <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
       <div>
-        <div class="modal-head-title">Incident Simulator</div>
+        <div class="modal-head-title" id="incidentModalTitle">Incident Simulator</div>
         <div class="modal-head-sub">For demo &amp; testing purposes</div>
       </div>
-      <button class="modal-close" onclick="closeIncidentModal()">✕</button>
+      <button class="modal-close" onclick="closeIncidentModal()" aria-label="Close incident simulator">✕</button>
     </div>
     <div class="modal-body">
-      <label class="field-label">Select Gate</label>
+      <label class="field-label" for="incGate">Select Gate</label>
       <select class="modal-select" id="incGate">
         <option value="A">Gate A (North)</option>
         <option value="B">Gate B (East)</option>
         <option value="C">Gate C (South)</option>
         <option value="D">Gate D (West)</option>
       </select>
-      <label class="field-label">Incident Type</label>
+      <label class="field-label" for="incType">Incident Type</label>
       <select class="modal-select" id="incType">
         <option value="overcrowding">Overcrowding</option>
         <option value="medical">Medical</option>
@@ -492,7 +498,7 @@ function renderGates(liveGates){
       <div class="sheen"></div>
       <div class="gate-top">
         <div><div class="gate-name">${g.name}</div><div class="gate-zone">${g.zone}</div></div>
-        <div class="pct-chip ${st}">${pct}%</div>
+        <div class="pct-chip ${st}" role="status">${st === 'critical' ? '⚠ ' : st === 'caution' ? '● ' : '✓ '}${pct}%</div>
       </div>
       <div class="cap-row"><div class="cap-label">Capacity</div><div class="cap-val">${Math.round(g.capacity*pct/100).toLocaleString()} / ${g.capacity.toLocaleString()}</div></div>
       <div class="bar-track"><div class="bar-fill ${st}" style="width:${pct}%"></div></div>
@@ -526,7 +532,7 @@ function renderAmenities(liveAmenities){
     const meta = GROUP_META[type];
     const group = document.createElement('div');
     group.className = 'amenity-group';
-    group.innerHTML = `<div class="amenity-group-head"><svg viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2">${meta.icon}</svg><div class="amenity-group-title">${meta.label}</div></div>`;
+    group.innerHTML = `<div class="amenity-group-head"><svg viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2" aria-hidden="true">${meta.icon}</svg><div class="amenity-group-title">${meta.label}</div></div>`;
     const grid = document.createElement('div');
     grid.className = 'grid-amenities';
     items.forEach(a=>{
@@ -618,7 +624,11 @@ function addMsg(text, who){
   const div = document.createElement('div');
   div.className = 'msg ' + who;
   const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = text.replace(/\n/g,'<br>') + `<div class="msg-time">${time}</div>`;
+  div.textContent = text;
+  const timestamp = document.createElement('div');
+  timestamp.className = 'msg-time';
+  timestamp.textContent = time;
+  div.appendChild(timestamp);
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
   return div;
@@ -658,11 +668,29 @@ async function sendAiMessage(){
 /* ============================================================
    Incident modal
    ============================================================ */
-function openIncidentModal(){ document.getElementById('incidentOverlay').classList.add('open'); }
+let lastFocusedEl = null;
+
+function openIncidentModal(){
+  lastFocusedEl = document.activeElement;
+  document.getElementById('incidentOverlay').classList.add('open');
+  document.getElementById('incGate').focus();
+  document.addEventListener('keydown', onModalKeydown);
+}
 function closeIncidentModal(){
   document.getElementById('incidentOverlay').classList.remove('open');
   const res = document.getElementById('incResult');
   res.classList.remove('show','ok','err'); res.textContent = '';
+  document.removeEventListener('keydown', onModalKeydown);
+  if (lastFocusedEl) lastFocusedEl.focus();
+}
+function onModalKeydown(event){
+  if (event.key === 'Escape') { closeIncidentModal(); return; }
+  if (event.key !== 'Tab') return;
+  const focusables = document.querySelector('.modal').querySelectorAll('button, select, [href], input, [tabindex]:not([tabindex="-1"])');
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
 document.getElementById('incidentOverlay').addEventListener('click', (e)=>{ if(e.target.id==='incidentOverlay') closeIncidentModal(); });
 

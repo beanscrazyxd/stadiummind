@@ -44,6 +44,24 @@ Check the API directly if needed:
 curl http://localhost:8000/health
 ```
 
+## Quality checks
+
+Run the automated API and simulator tests with the free mock provider:
+
+```bash
+PROVIDER=mock pytest -v
+```
+
+Every push and pull request to `main` also runs this suite through GitHub Actions.
+The dashboard includes keyboard-accessible controls, a skip link, live-region announcements,
+and an accessible incident dialog.
+
+## Deploying to Railway
+
+Railway redeploys automatically after a successful push to `main`. In Railway's service
+variables, set `PROVIDER` and the matching provider API key (or use `mock`), then set
+`ALLOWED_ORIGINS` to your public Railway URL. Keep `.env` out of Git.
+
 ## Project layout
 
 | File | Purpose |
