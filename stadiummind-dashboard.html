@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StadiumMind — Operations Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#080C0A;
+    --panel: rgba(20,28,24,0.55);
+    --panel-solid:#131C17;
+    --panel-hi: rgba(30,40,34,0.65);
+    --chalk:#F1F1E8;
+    --steel:#8B968E;
+    --floodlight:#FFB648;
+    --floodlight-soft: rgba(255,182,72,0.16);
+    --turf:#3FA66B;
+    --turf-soft: rgba(63,166,107,0.16);
+    --alert:#FF5A48;
+    --alert-soft: rgba(255,90,72,0.16);
+    --line: rgba(241,241,232,0.10);
+    --line-hi: rgba(241,241,232,0.22);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--ink);
+    color:var(--chalk);
+    font-family:'Inter', sans-serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    position:relative;
+  }
+  ::selection{background:var(--floodlight); color:var(--ink);}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .display{font-family:'Bebas Neue', sans-serif;}
+  a{color:inherit;}
+
+  #bg-canvas{position:fixed; inset:0; z-index:0; opacity:0.65;}
+  .aurora{position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
+  .blob{position:absolute; border-radius:50%; filter:blur(90px); opacity:0.28; animation:drift 22s ease-in-out infinite;}
+  .b1{width:520px; height:520px; background:var(--floodlight); top:-160px; left:-120px; animation-delay:0s;}
+  .b2{width:460px; height:460px; background:var(--turf); bottom:-160px; right:-100px; animation-delay:-8s;}
+  .b3{width:340px; height:340px; background:#3E6BFF; top:40%; left:60%; animation-delay:-14s; opacity:0.14;}
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) scale(1);}
+    50%{transform:translate(60px,-40px) scale(1.12);}
+  }
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:50; opacity:0.035; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap{position:relative; z-index:5; max-width:1360px; margin:0 auto; padding:28px 32px 160px;}
+  @media (max-width:800px){ .wrap{padding:20px 16px 160px;} }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 22px; margin-bottom:26px;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    backdrop-filter:blur(20px) saturate(160%); -webkit-backdrop-filter:blur(20px) saturate(160%);
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand-mark{
+    width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--floodlight), #B97A1E);
+    box-shadow:0 8px 20px -6px rgba(255,182,72,0.55);
+  }
+  .brand-name{font-family:'Bebas Neue',sans-serif; font-size:21px; letter-spacing:0.03em; line-height:1;}
+  .brand-sub{font-size:11.5px; color:var(--steel); margin-top:2px;}
+  .live-badge{
+    display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px;
+    background:var(--turf-soft); border:1px solid rgba(63,166,107,0.4); font-size:12.5px; font-weight:600; color:var(--turf);
+  }
+  .live-badge .led{width:7px; height:7px; border-radius:50%; background:var(--turf); box-shadow:0 0 10px var(--turf); animation:blink 1.6s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+  .header-actions{display:flex; align-items:center; gap:12px;}
+  .icon-btn{
+    display:flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px;
+    background:rgba(255,255,255,0.04); border:1px solid var(--line); color:var(--chalk); font-size:13px;
+    cursor:pointer; transition:all .2s; font-family:'Inter',sans-serif;
+  }
+  .icon-btn:hover{background:rgba(255,255,255,0.09); border-color:var(--line-hi); transform:translateY(-1px);}
+  .icon-btn svg{width:15px; height:15px;}
+  @media (max-width:700px){ .brand-sub{display:none;} }
+
+  /* ---------- tilt card base ---------- */
+  .tilt{
+    transform-style:preserve-3d; transition:transform .12s ease-out, box-shadow .3s;
+    position:relative; will-change:transform;
+  }
+  .tilt .sheen{
+    position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.14), transparent 60%);
+    transition:opacity .25s; z-index:2;
+  }
+  .tilt:hover .sheen{opacity:1;}
+
+  .glass{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    backdrop-filter:blur(18px) saturate(150%); -webkit-backdrop-filter:blur(18px) saturate(150%);
+    box-shadow:0 24px 60px -24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ---------- hero status panel ---------- */
+  .hero-panel{padding:38px 40px; margin-bottom:34px; position:relative; overflow:hidden;}
+  @media (max-width:700px){ .hero-panel{padding:26px 22px;} }
+  .hero-top{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px; margin-bottom:30px;}
+  .hero-title{font-family:'Bebas Neue',sans-serif; font-size:clamp(34px,4.6vw,52px); letter-spacing:0.01em;}
+  .hero-venue{color:var(--steel); font-size:15px; margin-top:8px;}
+  .live-event-badge{
+    display:flex; align-items:center; gap:9px; padding:11px 20px; border-radius:12px;
+    background:var(--alert-soft); border:1px solid rgba(255,90,72,0.45); color:var(--alert); font-weight:700; font-size:13px;
+    box-shadow:0 0 30px -8px rgba(255,90,72,0.5);
+  }
+  .live-event-badge .dot{width:8px; height:8px; border-radius:50%; background:var(--alert); animation:blink 1.4s ease-in-out infinite;}
+
+  .hero-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  @media (max-width:760px){ .hero-stats{grid-template-columns:1fr;} }
+  .hstat{
+    padding:20px 22px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  }
+  .hstat-label{display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel); margin-bottom:12px;}
+  .hstat-label svg{width:14px; height:14px; stroke:var(--floodlight);}
+  .hstat-val{font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.01em;}
+  .hstat-sub{font-size:12.5px; color:var(--steel); margin-top:4px;}
+
+  /* ---------- section heads ---------- */
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; margin:44px 0 20px;}
+  .sec-title{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:0.01em;}
+  .sec-note{font-size:12.5px; color:var(--steel); font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- gate cards ---------- */
+  .grid-gates{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:20px;}
+  .gate-card{padding:26px 26px 22px; overflow:hidden;}
+  .gate-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;}
+  .gate-name{font-family:'Bebas Neue',sans-serif; font-size:24px;}
+  .gate-zone{font-size:12px; color:var(--steel); margin-top:2px;}
+  .pct-chip{padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:700; font-family:'IBM Plex Mono',monospace;}
+  .pct-chip.normal{background:var(--turf-soft); color:var(--turf);}
+  .pct-chip.caution{background:var(--floodlight-soft); color:var(--floodlight);}
+  .pct-chip.critical{background:var(--alert-soft); color:var(--alert); animation:pulseChip 1.2s ease-in-out infinite;}
+  @keyframes pulseChip{0%,100%{box-shadow:0 0 0 0 rgba(255,90,72,0.5);} 50%{box-shadow:0 0 0 6px rgba(255,90,72,0);}}
+
+  .cap-row{display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 8px;}
+  .cap-label{font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel);}
+  .cap-val{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600;}
+  .bar-track{height:7px; border-radius:99px; background:rgba(255,255,255,0.06); overflow:hidden; margin-bottom:20px;}
+  .bar-fill{height:100%; border-radius:99px; transition:width 1s cubic-bezier(.2,.8,.2,1); position:relative;}
+  .bar-fill.normal{background:linear-gradient(90deg,#2c7a4e,var(--turf));}
+  .bar-fill.caution{background:linear-gradient(90deg,#b3791f,var(--floodlight));}
+  .bar-fill.critical{background:linear-gradient(90deg,#a83226,var(--alert));}
+
+  .queue-row{display:flex; justify-content:space-between; align-items:flex-end;}
+  .queue-label{font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel); margin-bottom:6px;}
+  .queue-val{font-family:'Bebas Neue',sans-serif; font-size:32px; display:flex; align-items:center; gap:8px;}
+  .trend{width:16px; height:16px;}
+  .trend.up{stroke:var(--alert);}
+  .trend.down{stroke:var(--turf);}
+
+  .gate-footer{margin-top:18px; padding-top:16px; border-top:1px solid var(--line); display:flex; align-items:center; gap:8px; font-size:12.5px;}
+  .status-dot{width:8px; height:8px; border-radius:50%;}
+  .status-dot.normal{background:var(--turf); box-shadow:0 0 8px var(--turf);}
+  .status-dot.caution{background:var(--floodlight); box-shadow:0 0 8px var(--floodlight);}
+  .status-dot.critical{background:var(--alert); box-shadow:0 0 8px var(--alert);}
+
+  /* ---------- amenities ---------- */
+  .amenity-group{margin-bottom:8px;}
+  .amenity-group-head{display:flex; align-items:center; gap:10px; margin:26px 0 14px;}
+  .amenity-group-head svg{width:17px; height:17px; stroke:var(--floodlight);}
+  .amenity-group-title{font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--steel); font-weight:600;}
+  .grid-amenities{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px;}
+  .amenity-card{padding:20px 22px;}
+  .amenity-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+  .amenity-name{font-weight:700; font-size:15px;}
+  .amenity-wait{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px;}
+  .amenity-near{font-size:12px; color:var(--steel); margin-bottom:14px;}
+  .amenity-track{height:5px; border-radius:99px; background:rgba(255,255,255,0.06); overflow:hidden;}
+  .amenity-fill{height:100%; border-radius:99px; transition:width 1s cubic-bezier(.2,.8,.2,1);}
+
+  /* ---------- AI assistant floating widget ---------- */
+  .ai-widget{
+    position:fixed; bottom:28px; right:28px; z-index:60; width:380px; max-width:calc(100vw - 40px);
+    display:flex; flex-direction:column; border-radius:20px; overflow:hidden;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,0.75);
+    transform-origin:bottom right; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s;
+  }
+  .ai-widget.collapsed .ai-body{display:none;}
+  .ai-header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px;
+    background:linear-gradient(135deg,#2E4CFF,#7C4CFF);
+    cursor:pointer;
+  }
+  .ai-header-left{display:flex; align-items:center; gap:12px;}
+  .ai-avatar{width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;}
+  .ai-avatar svg{width:20px; height:20px; stroke:white;}
+  .ai-title{font-weight:700; font-size:14.5px; color:white;}
+  .ai-sub{font-size:11.5px; color:rgba(255,255,255,0.8);}
+  .ai-toggle{color:white; opacity:0.85; font-size:18px; transition:transform .3s;}
+  .ai-widget.collapsed .ai-toggle{transform:rotate(180deg);}
+
+  .ai-body{background:rgba(15,20,17,0.92); backdrop-filter:blur(22px); border:1px solid var(--line); border-top:none;}
+  .ai-messages{max-height:340px; overflow-y:auto; padding:18px 18px 6px; display:flex; flex-direction:column; gap:14px;}
+  .ai-messages::-webkit-scrollbar{width:5px;}
+  .ai-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15); border-radius:99px;}
+  .msg{max-width:88%; padding:11px 15px; border-radius:14px; font-size:13.5px; line-height:1.55;}
+  .msg.bot{background:rgba(255,255,255,0.07); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px;}
+  .msg.user{background:linear-gradient(135deg,#2E4CFF,#7C4CFF); color:white; align-self:flex-end; border-bottom-right-radius:4px;}
+  .msg-time{font-size:10px; color:var(--steel); margin-top:6px;}
+  .typing{display:flex; gap:4px; padding:6px 4px;}
+  .typing span{width:6px; height:6px; border-radius:50%; background:var(--steel); animation:typing 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;} .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes typing{0%,60%,100%{opacity:0.3; transform:translateY(0);} 30%{opacity:1; transform:translateY(-3px);}}
+
+  .ai-input-row{display:flex; gap:10px; padding:14px 16px 16px; border-top:1px solid var(--line);}
+  .ai-input{
+    flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:var(--chalk);
+    padding:11px 14px; border-radius:11px; font-size:13.5px; font-family:'Inter',sans-serif;
+  }
+  .ai-input:focus{outline:none; border-color:#7C4CFF;}
+  .ai-send{
+    width:40px; height:40px; border-radius:11px; border:none; cursor:pointer; flex-shrink:0;
+    background:linear-gradient(135deg,#2E4CFF,#7C4CFF); display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .ai-send:hover{transform:scale(1.06);}
+  .ai-send svg{width:16px; height:16px; stroke:white;}
+  .ai-hint{padding:0 18px 16px; font-size:11px; color:var(--steel); line-height:1.5;}
+
+  /* ---------- incident FAB + modal ---------- */
+  .incident-fab{
+    position:fixed; bottom:28px; left:28px; z-index:60;
+    display:flex; align-items:center; gap:10px; padding:15px 22px; border-radius:14px; border:none; cursor:pointer;
+    background:linear-gradient(135deg,#FF5A48,#D8331F); color:white; font-weight:700; font-size:13.5px;
+    box-shadow:0 20px 50px -14px rgba(255,90,72,0.55); transition:transform .2s;
+    font-family:'Inter',sans-serif;
+  }
+  .incident-fab:hover{transform:translateY(-2px);}
+  .incident-fab svg{width:17px; height:17px; stroke:white;}
+
+  .modal-overlay{
+    position:fixed; inset:0; z-index:80; background:rgba(4,6,5,0.72); backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    width:100%; max-width:460px; border-radius:20px; overflow:hidden;
+    box-shadow:0 40px 100px -20px rgba(0,0,0,0.8);
+    animation:modalIn .3s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes modalIn{from{opacity:0; transform:translateY(18px) scale(0.97);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .modal-head{
+    padding:22px 24px; background:linear-gradient(135deg,#FF5A48,#D8331F); display:flex; align-items:center; gap:14px;
+  }
+  .modal-head svg{width:24px; height:24px; stroke:white;}
+  .modal-head-title{font-weight:800; font-size:16px; color:white;}
+  .modal-head-sub{font-size:12px; color:rgba(255,255,255,0.85);}
+  .modal-close{margin-left:auto; background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:15px;}
+  .modal-body{background:rgba(15,20,17,0.96); backdrop-filter:blur(22px); border:1px solid var(--line); border-top:none; padding:24px;}
+  .field-label{font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel); margin:0 0 8px; display:block;}
+  .modal-select{
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:var(--chalk);
+    padding:12px 14px; border-radius:10px; font-size:14px; margin-bottom:18px; font-family:'Inter',sans-serif; cursor:pointer;
+  }
+  .modal-select:focus{outline:none; border-color:var(--alert);}
+  .trigger-btn{
+    width:100%; padding:15px; border:none; border-radius:11px; cursor:pointer; font-weight:700; font-size:14px;
+    background:linear-gradient(135deg,#FF5A48,#D8331F); color:white; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform .15s;
+  }
+  .trigger-btn:hover{transform:translateY(-1px);}
+  .trigger-btn:disabled{opacity:0.6; cursor:default; transform:none;}
+  .modal-result{
+    margin-top:18px; padding:16px; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid var(--line);
+    font-size:13px; line-height:1.65; white-space:pre-wrap; font-family:'IBM Plex Mono',monospace; display:none;
+  }
+  .modal-result.show{display:block;}
+  .modal-result.ok{border-color:rgba(63,166,107,0.4);}
+  .modal-result.err{border-color:rgba(255,90,72,0.4); color:var(--alert);}
+
+  .reveal{opacity:0; transform:translateY(24px) rotateX(4deg); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in{opacity:1; transform:translateY(0) rotateX(0);}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="grain"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F0C" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">STADIUMMIND</div>
+        <div class="brand-sub">Operations Command Center</div>
+      </div>
+    </div>
+    <div class="live-badge" id="liveBadge"><span class="led"></span><span id="liveBadgeText">Connecting…</span></div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="fetchStatus(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg>
+        Refresh
+      </button>
+      <button class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-3.9 3.1-6.3 7-6.3s7 2.4 7 6.3"/></svg>
+        Profile
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO STATUS -->
+  <div class="hero-panel glass tilt reveal">
+    <div class="sheen"></div>
+    <div class="hero-top">
+      <div>
+        <div class="hero-title">Operations Command Center</div>
+        <div class="hero-venue" id="venueLine">MetLife Stadium (Demo) — FIFA World Cup 2026</div>
+      </div>
+      <div class="live-event-badge"><span class="dot"></span>Live Event</div>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat">
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>AI Status</div>
+        <div class="hstat-val" id="aiStatusVal">Ready</div>
+        <div class="hstat-sub" id="aiStatusSub">All systems operational</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Venue</div>
+        <div class="hstat-val">MetLife Stadium</div>
+        <div class="hstat-sub">New Jersey, USA</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Last Updated</div>
+        <div class="hstat-val" id="lastUpdatedVal">—</div>
+        <div class="hstat-sub">Real-time data feed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATES -->
+  <div class="sec-head reveal">
+    <div class="sec-title">Gates Status</div>
+    <div class="sec-note mono">POLLING /ops/status · 6s</div>
+  </div>
+  <div class="grid-gates" id="gatesGrid"></div>
+
+  <!-- AMENITIES -->
+  <div class="sec-head reveal">
+    <div class="sec-title">Amenities</div>
+    <div class="sec-note mono" id="amenityCount">—</div>
+  </div>
+  <div id="amenitiesRoot"></div>
+</div>
+
+<!-- AI ASSISTANT -->
+<div class="ai-widget glass" id="aiWidget">
+  <div class="ai-header" id="aiHeader">
+    <div class="ai-header-left">
+      <div class="ai-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg></div>
+      <div>
+        <div class="ai-title">AI Operations Assistant</div>
+        <div class="ai-sub">Powered by advanced analytics</div>
+      </div>
+    </div>
+    <div class="ai-toggle">⌃</div>
+  </div>
+  <div class="ai-body">
+    <div class="ai-messages" id="aiMessages">
+      <div class="msg bot">Hello! I'm your AI Operations Assistant. Ask me anything about gate capacity, queue times, or incident response recommendations.<div class="msg-time" id="aiFirstTime"></div></div>
+    </div>
+    <div class="ai-input-row">
+      <input class="ai-input" id="aiInput" placeholder="Ask about gates, queues, incidents…" onkeydown="if(event.key==='Enter')sendAiMessage()">
+      <button class="ai-send" onclick="sendAiMessage()"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+    </div>
+    <div class="ai-hint">Example: "What's the status at Gate C?" or "Where should I send extra staff?"</div>
+  </div>
+</div>
+
+<!-- INCIDENT FAB -->
+<button class="incident-fab" onclick="openIncidentModal()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+  Incident Simulator
+</button>
+
+<!-- INCIDENT MODAL -->
+<div class="modal-overlay" id="incidentOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <div>
+        <div class="modal-head-title">Incident Simulator</div>
+        <div class="modal-head-sub">For demo &amp; testing purposes</div>
+      </div>
+      <button class="modal-close" onclick="closeIncidentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Select Gate</label>
+      <select class="modal-select" id="incGate">
+        <option value="A">Gate A (North)</option>
+        <option value="B">Gate B (East)</option>
+        <option value="C">Gate C (South)</option>
+        <option value="D">Gate D (West)</option>
+      </select>
+      <label class="field-label">Incident Type</label>
+      <select class="modal-select" id="incType">
+        <option value="overcrowding">Overcrowding</option>
+        <option value="medical">Medical</option>
+        <option value="security">Security</option>
+      </select>
+      <button class="trigger-btn" id="triggerBtn" onclick="triggerIncident()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        Trigger Incident
+      </button>
+      <div class="modal-result" id="incResult"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const BACKEND = "http://localhost:8000";
+
+/* ============================================================
+   Static KB (mirrors data/stadium_kb.json) — merged with live
+   queue/density numbers polled from /ops/status
+   ============================================================ */
+const KB = {
+  gates:[
+    {id:"A", name:"Gate A", zone:"North Zone", capacity:8000},
+    {id:"B", name:"Gate B", zone:"East Zone", capacity:6000},
+    {id:"C", name:"Gate C", zone:"South Zone", capacity:7000},
+    {id:"D", name:"Gate D", zone:"West Zone", capacity:5000},
+  ],
+  amenities:[
+    {id:"R1", type:"restroom", name:"Restroom North-1", near:"Gate A"},
+    {id:"R2", type:"restroom", name:"Restroom East-1", near:"Gate B"},
+    {id:"R3", type:"restroom", name:"Restroom South-1", near:"Gate C"},
+    {id:"R4", type:"restroom", name:"Restroom West-1", near:"Gate D"},
+    {id:"F1", type:"food", name:"Food Court North", near:"Gate A"},
+    {id:"F2", type:"food", name:"Food Court East", near:"Gate B"},
+    {id:"F3", type:"food", name:"Food Court South", near:"Gate C"},
+    {id:"M1", type:"medical", name:"Medical Station 1", near:"Gate A"},
+    {id:"M2", type:"medical", name:"Medical Station 2", near:"Gate C"},
+  ]
+};
+const GROUP_META = {
+  restroom:{label:"Restroom", color:"#3E6BFF", icon:'<path d="M12 2.5S6 9 6 13.5a6 6 0 0 0 12 0C18 9 12 2.5 12 2.5z"/>'},
+  food:{label:"Food", color:"#FFB648", icon:'<path d="M5 3v18M5 3c2 0 3 2 3 4s-1 3-3 3M19 3v18M19 8a2.5 2.5 0 0 0-5 0v0a2.5 2.5 0 0 0 5 0z"/>'},
+  medical:{label:"Medical", color:"#FF5A48", icon:'<path d="M20.8 4.6a5 5 0 0 0-7 0L12 6.4l-1.8-1.8a5 5 0 1 0-7 7L12 20.4l8.8-8.8a5 5 0 0 0 0-7z"/>'},
+};
+
+let prevQueues = {};
+
+function statusFor(pct){
+  if(pct >= 90) return 'critical';
+  if(pct >= 70) return 'caution';
+  return 'normal';
+}
+function statusLabel(s){
+  return s==='critical' ? 'Critical - Intervention needed' : s==='caution' ? 'Caution - Monitor closely' : 'Normal - All clear';
+}
+
+/* ============================================================
+   Render gates
+   ============================================================ */
+function renderGates(liveGates){
+  const grid = document.getElementById('gatesGrid');
+  grid.innerHTML = '';
+  KB.gates.forEach((g,i)=>{
+    const live = (liveGates && liveGates[g.id]) || {density_pct:40, queue_minutes:5};
+    const pct = live.density_pct;
+    const q = live.queue_minutes;
+    const st = statusFor(pct);
+    const prevQ = prevQueues[g.id];
+    const trendUp = prevQ !== undefined && q > prevQ;
+    const trendDown = prevQ !== undefined && q < prevQ;
+    prevQueues[g.id] = q;
+
+    const card = document.createElement('div');
+    card.className = 'gate-card glass tilt reveal in';
+    card.innerHTML = `
+      <div class="sheen"></div>
+      <div class="gate-top">
+        <div><div class="gate-name">${g.name}</div><div class="gate-zone">${g.zone}</div></div>
+        <div class="pct-chip ${st}">${pct}%</div>
+      </div>
+      <div class="cap-row"><div class="cap-label">Capacity</div><div class="cap-val">${Math.round(g.capacity*pct/100).toLocaleString()} / ${g.capacity.toLocaleString()}</div></div>
+      <div class="bar-track"><div class="bar-fill ${st}" style="width:${pct}%"></div></div>
+      <div class="queue-row">
+        <div>
+          <div class="queue-label">Queue Time</div>
+          <div class="queue-val">${q}m ${
+            trendUp ? '<svg class="trend up" viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M4 17l6-6 4 4 8-9"/><path d="M14 6h8v8"/></svg>' :
+            trendDown ? '<svg class="trend down" viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M4 7l6 6 4-4 8 9"/><path d="M14 18h8v-8"/></svg>' : ''
+          }</div>
+        </div>
+      </div>
+      <div class="gate-footer"><span class="status-dot ${st}"></span>${statusLabel(st)}</div>
+    `;
+    grid.appendChild(card);
+    attachTilt(card);
+  });
+}
+
+/* ============================================================
+   Render amenities (grouped)
+   ============================================================ */
+function renderAmenities(liveAmenities){
+  const root = document.getElementById('amenitiesRoot');
+  root.innerHTML = '';
+  const types = ['restroom','food','medical'];
+  let total = 0;
+  types.forEach(type=>{
+    const items = KB.amenities.filter(a=>a.type===type);
+    if(!items.length) return;
+    const meta = GROUP_META[type];
+    const group = document.createElement('div');
+    group.className = 'amenity-group';
+    group.innerHTML = `<div class="amenity-group-head"><svg viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2">${meta.icon}</svg><div class="amenity-group-title">${meta.label}</div></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid-amenities';
+    items.forEach(a=>{
+      total++;
+      const live = (liveAmenities && liveAmenities[a.id]) || {queue_minutes:5};
+      const w = live.queue_minutes;
+      const pct = Math.min(100, (w/20)*100);
+      const card = document.createElement('div');
+      card.className = 'amenity-card glass tilt reveal in';
+      card.innerHTML = `
+        <div class="sheen"></div>
+        <div class="amenity-top"><div class="amenity-name">${a.name}</div><div class="amenity-wait" style="color:${meta.color}">${w}m</div></div>
+        <div class="amenity-near">Near ${a.near}</div>
+        <div class="amenity-track"><div class="amenity-fill" style="width:${pct}%; background:${meta.color}"></div></div>
+      `;
+      grid.appendChild(card);
+      attachTilt(card);
+    });
+    group.appendChild(grid);
+    root.appendChild(group);
+  });
+  document.getElementById('amenityCount').textContent = total + ' TRACKED';
+}
+
+/* ============================================================
+   Fetch live status
+   ============================================================ */
+async function fetchStatus(manual){
+  const badge = document.getElementById('liveBadge');
+  const badgeText = document.getElementById('liveBadgeText');
+  try{
+    const r = await fetch(BACKEND + '/ops/status');
+    const d = await r.json();
+    badge.style.background = 'var(--turf-soft)'; badge.style.borderColor = 'rgba(63,166,107,0.4)'; badge.style.color = 'var(--turf)';
+    badgeText.textContent = 'Live';
+    renderGates(d.gates);
+    renderAmenities(d.amenities);
+    document.getElementById('aiStatusVal').textContent = 'Ready';
+    document.getElementById('aiStatusSub').textContent = 'All systems operational';
+  }catch(e){
+    badge.style.background = 'var(--alert-soft)'; badge.style.borderColor = 'rgba(255,90,72,0.4)'; badge.style.color = 'var(--alert)';
+    badgeText.textContent = 'Backend offline';
+    renderGates(null);
+    renderAmenities(null);
+    document.getElementById('aiStatusVal').textContent = 'Demo mode';
+    document.getElementById('aiStatusSub').textContent = 'Start uvicorn to go live';
+  }
+  document.getElementById('lastUpdatedVal').textContent = manual ? 'Just now' : 'Just now';
+}
+fetchStatus();
+setInterval(()=>fetchStatus(false), 6000);
+document.getElementById('aiFirstTime').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+/* ============================================================
+   3D tilt effect for glass cards
+   ============================================================ */
+function attachTilt(el){
+  const strength = 7;
+  el.addEventListener('mousemove', (e)=>{
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    const rx = (py - 0.5) * -strength;
+    const ry = (px - 0.5) * strength;
+    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(6px)`;
+    el.style.setProperty('--mx', (px*100)+'%');
+    el.style.setProperty('--my', (py*100)+'%');
+  });
+  el.addEventListener('mouseleave', ()=>{ el.style.transform = 'perspective(900px) rotateX(0) rotateY(0) translateZ(0)'; });
+}
+document.querySelectorAll('.tilt').forEach(attachTilt);
+
+/* ============================================================
+   Scroll reveals
+   ============================================================ */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+}, {threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ============================================================
+   AI Assistant chat
+   ============================================================ */
+const aiWidget = document.getElementById('aiWidget');
+document.getElementById('aiHeader').addEventListener('click', ()=> aiWidget.classList.toggle('collapsed'));
+
+function addMsg(text, who){
+  const box = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  div.innerHTML = text.replace(/\n/g,'<br>') + `<div class="msg-time">${time}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+function addTyping(){
+  const box = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typingMsg';
+  div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function removeTyping(){ const t = document.getElementById('typingMsg'); if(t) t.remove(); }
+
+async function sendAiMessage(){
+  const input = document.getElementById('aiInput');
+  const q = input.value.trim();
+  if(!q) return;
+  addMsg(q, 'user');
+  input.value = '';
+  addTyping();
+  try{
+    const r = await fetch(BACKEND + '/ops/query', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question:q})
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    removeTyping();
+    addMsg(d.answer, 'bot');
+  }catch(e){
+    removeTyping();
+    addMsg('Could not reach the backend at ' + BACKEND + '. Make sure uvicorn is running.', 'bot');
+  }
+}
+
+/* ============================================================
+   Incident modal
+   ============================================================ */
+function openIncidentModal(){ document.getElementById('incidentOverlay').classList.add('open'); }
+function closeIncidentModal(){
+  document.getElementById('incidentOverlay').classList.remove('open');
+  const res = document.getElementById('incResult');
+  res.classList.remove('show','ok','err'); res.textContent = '';
+}
+document.getElementById('incidentOverlay').addEventListener('click', (e)=>{ if(e.target.id==='incidentOverlay') closeIncidentModal(); });
+
+async function triggerIncident(){
+  const gate = document.getElementById('incGate').value;
+  const type = document.getElementById('incType').value;
+  const btn = document.getElementById('triggerBtn');
+  const res = document.getElementById('incResult');
+  btn.disabled = true; btn.textContent = 'Triggering…';
+  try{
+    const r = await fetch(BACKEND + '/safety/trigger_incident', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({location:gate, incident_type:type})
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    res.textContent = d.response_plan;
+    res.classList.add('show','ok'); res.classList.remove('err');
+    fetchStatus(true);
+  }catch(e){
+    res.textContent = 'Could not reach the backend at ' + BACKEND + '. Make sure uvicorn is running.\n\n(' + e.message + ')';
+    res.classList.add('show','err'); res.classList.remove('ok');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Trigger Incident';
+}
+
+/* ============================================================
+   Three.js background — glowing sensor network, drifts + parallax
+   ============================================================ */
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 18;
+
+  function resize(){
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  const COUNT = 90;
+  const positions = new Float32Array(COUNT*3);
+  const speeds = [];
+  for(let i=0;i<COUNT;i++){
+    positions[i*3] = (Math.random()-0.5)*36;
+    positions[i*3+1] = (Math.random()-0.5)*22;
+    positions[i*3+2] = (Math.random()-0.5)*20;
+    speeds.push(0.15+Math.random()*0.3);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({color:0xFFB648, size:0.09, transparent:true, opacity:0.75});
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  // connecting lines between near neighbors (computed once for a constellation feel)
+  const lineGeo = new THREE.BufferGeometry();
+  const lineVerts = [];
+  for(let i=0;i<COUNT;i++){
+    for(let j=i+1;j<COUNT;j++){
+      const dx = positions[i*3]-positions[j*3], dy = positions[i*3+1]-positions[j*3+1], dz = positions[i*3+2]-positions[j*3+2];
+      const d = Math.sqrt(dx*dx+dy*dy+dz*dz);
+      if(d < 4.2){
+        lineVerts.push(positions[i*3],positions[i*3+1],positions[i*3+2], positions[j*3],positions[j*3+1],positions[j*3+2]);
+      }
+    }
+  }
+  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(lineVerts,3));
+  const lineMat = new THREE.LineBasicMaterial({color:0x3FA66B, transparent:true, opacity:0.14});
+  scene.add(new THREE.LineSegments(lineGeo, lineMat));
+
+  let mouseX=0, mouseY=0;
+  window.addEventListener('mousemove',(e)=>{
+    mouseX = (e.clientX/window.innerWidth - 0.5);
+    mouseY = (e.clientY/window.innerHeight - 0.5);
+  });
+
+  let t=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    t += 0.003;
+    points.rotation.y = t*0.4 + mouseX*0.3;
+    points.rotation.x = Math.sin(t*0.3)*0.06 + mouseY*0.2;
+    camera.position.x += (mouseX*3 - camera.position.x)*0.02;
+    camera.position.y += (-mouseY*2 - camera.position.y)*0.02;
+    camera.lookAt(0,0,0);
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>
