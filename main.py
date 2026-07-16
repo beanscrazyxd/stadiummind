@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -21,7 +22,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("stadiummind")
 
-app = FastAPI(title="StadiumMind")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Start the simulated live-data feed exactly once per application process."""
+    start_simulator()
+    logger.info("StadiumMind started. provider=%s", os.getenv("PROVIDER", "mock"))
+    yield
+
+
+app = FastAPI(title="StadiumMind", lifespan=lifespan)
 _origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000")
 ALLOWED_ORIGINS = [origin.strip() for origin in _origins_env.split(",") if origin.strip()]
 app.add_middleware(
@@ -40,15 +49,27 @@ KB = json.loads(KB_PATH.read_text())
 MAX_MESSAGE_LEN = 500
 
 
-@app.on_event("startup")
-def startup() -> None:
-    start_simulator()
-    logger.info("StadiumMind started. provider=%s", os.getenv("PROVIDER", "mock"))
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Add browser protections to every response without exposing application internals."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; "
+        "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'"
+    )
+    return response
 
 
 # ---------- helpers (plain Python does the "fetching", LLM only explains) ----------
 
 def find_shortest_queue(amenity_type: str, near_gate: Optional[str] = None):
+    """Select the shortest amenity queue, preferring the visitor's gate when supplied."""
     candidates = [a for a in KB["amenities"] if a["type"] == amenity_type]
     if not candidates:
         raise HTTPException(status_code=404, detail=f"No amenities of type '{amenity_type}'")
@@ -60,6 +81,7 @@ def find_shortest_queue(amenity_type: str, near_gate: Optional[str] = None):
 
 
 def ops_summary_text() -> str:
+    """Build the compact, current operations context used by the LLM."""
     lines = []
     for g in KB["gates"]:
         s = live_state["gates"].get(g["id"], {})
@@ -96,6 +118,7 @@ class FanChatRequest(BaseModel):
 @app.post("/fan/chat")
 @limiter.limit("15/minute")
 def fan_chat(request: Request, req: FanChatRequest):
+    """Answer a fan request using live queues and the stadium knowledge base."""
     restroom, restroom_wait = find_shortest_queue("restroom", req.seat_gate)
     food, food_wait = find_shortest_queue("food", req.seat_gate)
 
@@ -119,6 +142,7 @@ def fan_chat(request: Request, req: FanChatRequest):
 @app.get("/ops/status")
 @limiter.limit("60/minute")
 def ops_status(request: Request):
+    """Return the current simulated stadium telemetry."""
     return live_state
 
 
@@ -129,6 +153,7 @@ class OpsQueryRequest(BaseModel):
 @app.post("/ops/query")
 @limiter.limit("15/minute")
 def ops_query(request: Request, req: OpsQueryRequest):
+    """Provide a concise, action-oriented answer for operations staff."""
     system_prompt = (
         "You are an operations assistant for stadium staff during the FIFA World Cup 2026. "
         "Given the live metrics below, answer the staff member's question concisely and, "
@@ -153,6 +178,7 @@ class IncidentRequest(BaseModel):
 @app.post("/safety/trigger_incident")
 @limiter.limit("10/minute")
 def safety_trigger(request: Request, req: IncidentRequest):
+    """Create a demo incident and return a concise incident-response plan."""
     if req.location not in VALID_GATES:
         raise HTTPException(status_code=400, detail=f"Unknown gate '{req.location}'")
     if req.incident_type not in VALID_INCIDENT_TYPES:
@@ -171,8 +197,16 @@ def safety_trigger(request: Request, req: IncidentRequest):
 
 @app.get("/")
 def serve_dashboard():
+    """Serve the operations command center."""
     return FileResponse(Path(__file__).parent / "stadiummind-dashboard.html")
+
+
+@app.get("/fan")
+def serve_fan_portal():
+    """Serve the public fan-assistant portal."""
+    return FileResponse(Path(__file__).parent / "fan.html")
 
 @app.get("/health")
 def health():
+    """Provide a minimal health probe for Railway and uptime monitors."""
     return {"status": "ok", "provider": os.getenv("PROVIDER", "mock")}

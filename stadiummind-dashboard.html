@@ -198,14 +198,14 @@
   .ai-widget.collapsed .ai-body{display:none;}
   .ai-header{
     display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px;
-    background:linear-gradient(135deg,#2E4CFF,#7C4CFF);
-    cursor:pointer;
+    background:linear-gradient(135deg,#2E4CFF,#7C4CFF); border:0; color:white; width:100%; text-align:left;
+    cursor:pointer; font-family:'Inter',sans-serif;
   }
   .ai-header-left{display:flex; align-items:center; gap:12px;}
   .ai-avatar{width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;}
   .ai-avatar svg{width:20px; height:20px; stroke:white;}
-  .ai-title{font-weight:700; font-size:14.5px; color:white;}
-  .ai-sub{font-size:11.5px; color:rgba(255,255,255,0.8);}
+  .ai-title{display:block; font-weight:700; font-size:14.5px; color:white;}
+  .ai-sub{display:block; font-size:11.5px; color:rgba(255,255,255,0.8);}
   .ai-toggle{color:white; opacity:0.85; font-size:18px; transition:transform .3s;}
   .ai-widget.collapsed .ai-toggle{transform:rotate(180deg);}
 
@@ -290,6 +290,7 @@
 
   .reveal{opacity:0; transform:translateY(24px) rotateX(4deg); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
   .reveal.in{opacity:1; transform:translateY(0) rotateX(0);}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}}
 </style>
 </head>
 <body>
@@ -335,17 +336,17 @@
     </div>
     <div class="hero-stats">
       <div class="hstat">
-        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>AI Status</div>
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>AI Status</div>
         <div class="hstat-val" id="aiStatusVal">Ready</div>
         <div class="hstat-sub" id="aiStatusSub">All systems operational</div>
       </div>
       <div class="hstat">
-        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Venue</div>
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Venue</div>
         <div class="hstat-val">MetLife Stadium</div>
         <div class="hstat-sub">New Jersey, USA</div>
       </div>
       <div class="hstat">
-        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Last Updated</div>
+        <div class="hstat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Last Updated</div>
         <div class="hstat-val" id="lastUpdatedVal">—</div>
         <div class="hstat-sub">Real-time data feed</div>
       </div>
@@ -369,17 +370,17 @@
 
 <!-- AI ASSISTANT -->
 <div class="ai-widget glass" id="aiWidget">
-  <div class="ai-header" id="aiHeader">
-    <div class="ai-header-left">
-      <div class="ai-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg></div>
-      <div>
-        <div class="ai-title">AI Operations Assistant</div>
-        <div class="ai-sub">Powered by advanced analytics</div>
-      </div>
-    </div>
-    <div class="ai-toggle">⌃</div>
-  </div>
-  <div class="ai-body">
+  <button class="ai-header" id="aiHeader" type="button" aria-expanded="true" aria-controls="aiBody">
+    <span class="ai-header-left">
+      <span class="ai-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg></span>
+      <span>
+        <span class="ai-title">AI Operations Assistant</span>
+        <span class="ai-sub">Powered by advanced analytics</span>
+      </span>
+    </span>
+    <span class="ai-toggle" aria-hidden="true">⌃</span>
+  </button>
+  <div class="ai-body" id="aiBody">
     <div class="ai-messages" id="aiMessages" role="log" aria-live="polite" aria-relevant="additions">
       <div class="msg bot">Hello! I'm your AI Operations Assistant. Ask me anything about gate capacity, queue times, or incident response recommendations.<div class="msg-time" id="aiFirstTime"></div></div>
     </div>
@@ -402,7 +403,7 @@
 <div class="modal-overlay" id="incidentOverlay" role="presentation">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="incidentModalTitle">
     <div class="modal-head">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
       <div>
         <div class="modal-head-title" id="incidentModalTitle">Incident Simulator</div>
         <div class="modal-head-sub">For demo &amp; testing purposes</div>
@@ -424,7 +425,7 @@
         <option value="security">Security</option>
       </select>
       <button class="trigger-btn" id="triggerBtn" onclick="triggerIncident()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
         Trigger Incident
       </button>
       <div class="modal-result" id="incResult"></div>
@@ -617,7 +618,10 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
    AI Assistant chat
    ============================================================ */
 const aiWidget = document.getElementById('aiWidget');
-document.getElementById('aiHeader').addEventListener('click', ()=> aiWidget.classList.toggle('collapsed'));
+document.getElementById('aiHeader').addEventListener('click', event => {
+  const collapsed = aiWidget.classList.toggle('collapsed');
+  event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
+});
 
 function addMsg(text, who){
   const box = document.getElementById('aiMessages');

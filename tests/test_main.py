@@ -19,6 +19,19 @@ def test_health_reports_provider():
     assert "provider" in response.json()
 
 
+def test_health_includes_security_headers():
+    response = client.get("/health")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
+    assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+
+
+def test_fan_portal_is_served():
+    response = client.get("/fan")
+    assert response.status_code == 200
+    assert "Fan Assistant" in response.text
+
+
 def test_ops_status_returns_gates_and_amenities():
     response = client.get("/ops/status")
     assert response.status_code == 200

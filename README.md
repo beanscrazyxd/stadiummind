@@ -38,6 +38,8 @@ uvicorn main:app
 
 Open **http://localhost:8000/** — this single URL serves both the API and the full dashboard (`stadiummind-dashboard.html`), with the AI assistant chat and incident simulator wired live to the backend.
 
+The public, multilingual fan portal is available at **http://localhost:8000/fan**. It connects directly to `/fan/chat` and lets visitors provide a nearby gate for queue-aware recommendations.
+
 Check the API directly if needed:
 
 ```bash
@@ -54,7 +56,7 @@ PROVIDER=mock pytest -v
 
 Every push and pull request to `main` also runs this suite through GitHub Actions.
 The dashboard includes keyboard-accessible controls, a skip link, live-region announcements,
-and an accessible incident dialog.
+an accessible incident dialog, reduced-motion support, and response security headers.
 
 ## Deploying to Railway
 

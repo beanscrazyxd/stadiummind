@@ -15,6 +15,8 @@ live_state = {
 
 _gate_ids = ["A", "B", "C", "D"]
 _amenity_ids = ["R1", "R2", "R3", "R4", "F1", "F2", "F3"]
+_started = False
+_start_lock = threading.Lock()
 
 
 def _init_state():
@@ -42,8 +44,13 @@ def _loop():
 
 
 def start_simulator():
-    t = threading.Thread(target=_loop, daemon=True)
-    t.start()
+    """Start one background simulation thread, even if startup runs more than once."""
+    global _started
+    with _start_lock:
+        if _started:
+            return
+        _started = True
+        threading.Thread(target=_loop, daemon=True, name="stadium-simulator").start()
 
 
 def trigger_incident(location: str, incident_type: str):
