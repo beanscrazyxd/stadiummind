@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -117,6 +118,9 @@ def safety_trigger(req: IncidentRequest):
     answer = ask_llm(system_prompt, user_prompt)
     return {"incident": incident, "response_plan": answer}
 
+@app.get("/")
+def serve_dashboard():
+    return FileResponse("stadiummind-dashboard.html")
 
 @app.get("/health")
 def health():
